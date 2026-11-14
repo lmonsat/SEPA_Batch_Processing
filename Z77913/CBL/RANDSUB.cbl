@@ -52,25 +52,57 @@
        01 WS-BE-BANK-TABLE REDEFINES WS-BE-BANK.
            05 WS-BE-BANK-CODE       PIC 9(03) OCCURS 3 TIMES.
       *
-       01 WS-SEED           PIC 9(08).
-       01 WS-RANDOM-VAL     PIC 9(03)V9(05).
+      * --- Structure for CURRENT-DATE  ---
+       01 WS-CURRENT-DATE-DATA.
+           02 WS-CURRENT-DATE-21.
+              03 WS-DATE.
+                 04 WS-YYYY           PIC 9(04).
+                 04 WS-MM             PIC 9(02).
+                 04 WS-DD             PIC 9(02).
+              03 WS-TIME.
+                 04 WS-TIME-HH        PIC 9(02).
+                 04 WS-TIME-MM        PIC 9(02).
+                 04 WS-TIME-SS        PIC 9(02).
+                 04 WS-TIME-HUND      PIC 9(02).
+              03 WS-DIFF-FROM-GMT.
+                 04 WS-DIFF-SIGN      PIC X(01).
+                 04 WS-DIFF-HOURS     PIC 9(02).
+                 04 WS-DIFF-MINUTES   PIC 9(02).
+      *-------------------------------------------
+       01 WS-SEED           PIC 9(18).
+       01 WS-RANDOM-VAL     PIC 9(18) COMP.
+       01 WS-QUOTIENT       PIC 9(18) COMP.
        01 WS-VAL            PIC 9(02).
+       01 WS-ACCOUNT-NBR    PIC 9(01).
        LINKAGE SECTION.
       *
        01 LK-COUNTRY-CODE       PIC A(02).
+       01 LK-RAND               PIC A(04).
        01 LK-MAX                PIC 9(03).
        01 LK-RETURN             PIC 9(08).
       *------------------
-       PROCEDURE DIVISION USING LK-COUNTRY-CODE, LK-MAX, LK-RETURN.
+       PROCEDURE DIVISION USING LK-COUNTRY-CODE, LK-RAND,
+      -                                               LK-MAX, LK-RETURN.
       *------------------
-       GEN-IBAN.
-      *    Getting current-date 'HHMMSSDD'
-           MOVE FUNCTION CURRENT-DATE (9:8) TO WS-SEED.
-      *    Randomizing nbr using the seed
-           COMPUTE WS-RANDOM-VAL = FUNCTION RANDOM (WS-SEED).
+       0000-MAIN.
+      *    Getting current-date 'MMSSDD'
+      *    INIT FLAG used to generate the seed only once
+      *    Instead of current-date, use ACCEPT MVS : (format: 'MMSSDD')
+      *    ACCEPT WS-TIME-NOW FROM TIME.
+           IF LK-RAND = "INIT"
+              MOVE FUNCTION CURRENT-DATE TO WS-CURRENT-DATE-21
+              STRING WS-TIME-MM DELIMITED BY SIZE
+                     WS-TIME-SS DELIMITED BY SIZE
+                     WS-TIME-HUND DELIMITED BY SIZE
+              INTO WS-SEED
+              DISPLAY "SEED: " WS-SEED
+           END-IF.
+           PERFORM 1000-NEXT-RAND.
       *    Between 1 and LK-MAX
-           COMPUTE WS-VAL = FUNCTION INTEGER
-      -                                    (WS-RANDOM-VAL * LK-MAX) + 1.
+           DIVIDE WS-RANDOM-VAL BY LK-MAX
+                  GIVING WS-QUOTIENT
+                  REMAINDER WS-VAL.
+           ADD 1 TO WS-VAL.
            EVALUATE LK-COUNTRY-CODE
               WHEN "FR"
                  MOVE WS-FR-BANK-CODE (WS-VAL) TO LK-RETURN
@@ -84,3 +116,12 @@
                  MOVE WS-VAL TO LK-RETURN
            END-EVALUATE.
            GOBACK.
+      *    LCG Algorithm to generate a random number based on SEED
+      *    Seed = (Seed * 1103515245 + 12345) MOD 2147483647
+      *    I didn't use FUNCTION MOD for compatibility between systems
+       1000-NEXT-RAND.
+              COMPUTE WS-SEED = (WS-SEED * 1103515245 + 12345)
+              DIVIDE WS-SEED BY 2147483647
+                 GIVING WS-QUOTIENT
+                 REMAINDER WS-RANDOM-VAL.
+              MOVE WS-RANDOM-VAL TO WS-SEED.

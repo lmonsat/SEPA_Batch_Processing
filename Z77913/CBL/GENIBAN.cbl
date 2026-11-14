@@ -43,9 +43,13 @@
       *
        01 WS-FR-BANK.
          05 WS-BANK-CODE          PIC 9(05).
-         05 WS-BANK-AGENCY        PIC 9(05).
-         05 WS-BANK-ACCOUNT       PIC 9(11).
+         05 WS-AGENCY-CODE        PIC 9(05).
+         05 WS-BANK-ACCOUNT       PIC X(11).
          05 WS-IBAN-KEY           PIC 9(02).
+         05 WS-FULL-RIB           PIC 9(15).
+         05 WS-QUOTIENT           PIC 9(15).
+         05 WS-RESTE              PIC 9(02).
+         05 WS-RIB-KEY            PIC 9(02).
       *
        01 WS-DE-BANK.
          05 WS-BANK-DB          PIC 9(08) VALUE 10070000.
@@ -65,6 +69,8 @@
        01 WS-RETURN          PIC 9(08).
        01 WS-MAX             PIC 9(03) VALUE 3.
        01 WS-MAX-AGENCY      PIC 9(03) VALUE 99.
+       01 WS-MAX-ACC-NBR     PIC 9(01) VALUE 9.
+       01 WS-TEMP            PIC 9(01).
       *
        01 WS-COUNTRY-BBAN.
       *   05 WS-FR-BBAN       PIC 9(23).
@@ -76,20 +82,42 @@
       -    "bcdefghijklmnopqrstuvwxyz0123456789".
        01 WS-ALPHA-ASCII    PIC X(62) VALUE "ABCDEFGHIJKLMNOPQRSTUVWXYZa
       -    "bcdefghijklmnopqrstuvwxyz0123456789".
+       01 WS-COUNT           PIC 9(02).
 
       *------------------
        PROCEDURE DIVISION.
       *------------------
-       IBAN-FR.
-           CALL 'RANDSUB' USING BY CONTENT "FR",
+       0000-IBAN-FR.
+           CALL 'RANDSUB' USING BY CONTENT "FR", "INIT",
       -                         BY REFERENCE WS-MAX, WS-RETURN.
            MOVE WS-RETURN(4:5) TO WS-BANK-CODE.
            DISPLAY 'BANK CODE: ' WS-BANK-CODE.
-
-           CALL 'RANDSUB' USING BY CONTENT " ",
+      *
+           CALL 'RANDSUB' USING BY CONTENT " ", "NEXT",
       -                         BY REFERENCE WS-MAX-AGENCY, WS-RETURN.
-           MOVE WS-RETURN(4:5) TO WS-BANK-AGENCY.
-           DISPLAY 'BANK AGENCY: ' WS-BANK-AGENCY.
+           MOVE WS-RETURN(4:5) TO WS-AGENCY-CODE.
+           DISPLAY 'BANK AGENCY: ' WS-AGENCY-CODE.
+      *    Calling 11 times RANDSUB for the 11 digits in the account nbr
+           MOVE 11 TO WS-COUNT.
+           PERFORM UNTIL WS-COUNT <= 0
+              CALL 'RANDSUB' USING BY CONTENT " ", "NEXT",
+      -                         BY REFERENCE WS-MAX-ACC-NBR, WS-RETURN
+              MOVE WS-RETURN(7:1) TO WS-BANK-ACCOUNT(WS-COUNT:1)
+              DISPLAY 'ACCOUNT NUMBER: ' WS-BANK-ACCOUNT
+           SUBTRACT 1 FROM WS-COUNT
+           END-PERFORM.
+      *    calculation of RIB KEY:
+      *    97 - ((89 * BANK CODE / 15 * AGENCY CODE / 3 * ACC) MOD 97)
+           COMPUTE WS-FULL-RIB = (89 * WS-BANK-CODE)
+                                + (15 * WS-AGENCY-CODE)
+                                + (3  * WS-BANK-ACCOUNT);
+
+           DIVIDE WS-FULL-RIB BY 97
+               GIVING    WS-QUOTIENT
+               REMAINDER WS-RESTE.
+
+           COMPUTE WS-RIB-KEY = 97 - WS-RESTE
+      *
            GOBACK.
       * CONVERSION.
       *     INSPECT WS-CHAINE-ENTREE
