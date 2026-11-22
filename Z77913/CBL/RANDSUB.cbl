@@ -6,7 +6,6 @@
       *--------------------
        ENVIRONMENT DIVISION.
       *--------------------
-
       *-------------
        DATA DIVISION.
       *-------------
@@ -76,12 +75,12 @@
        01 WS-ACCOUNT-NBR    PIC 9(01).
        LINKAGE SECTION.
       *
-       01 LK-COUNTRY-CODE       PIC A(02).
+       01 LK-FULL-COUNTRY-CODE       PIC A(02).
        01 LK-RAND               PIC A(04).
        01 LK-MAX                PIC 9(03).
        01 LK-RETURN             PIC 9(08).
       *------------------
-       PROCEDURE DIVISION USING LK-COUNTRY-CODE, LK-RAND,
+       PROCEDURE DIVISION USING LK-FULL-COUNTRY-CODE, LK-RAND,
       -                                               LK-MAX, LK-RETURN.
       *------------------
        0000-MAIN.
@@ -94,7 +93,8 @@
               STRING WS-TIME-MM DELIMITED BY SIZE
                      WS-TIME-SS DELIMITED BY SIZE
                      WS-TIME-HUND DELIMITED BY SIZE
-              INTO WS-SEED
+                     INTO WS-SEED
+              END-STRING
               DISPLAY "SEED: " WS-SEED
            END-IF.
            PERFORM 1000-NEXT-RAND.
@@ -103,7 +103,7 @@
                   GIVING WS-QUOTIENT
                   REMAINDER WS-VAL.
            ADD 1 TO WS-VAL.
-           EVALUATE LK-COUNTRY-CODE
+           EVALUATE LK-FULL-COUNTRY-CODE
               WHEN "FR"
                  MOVE WS-FR-BANK-CODE (WS-VAL) TO LK-RETURN
               WHEN "LU"
@@ -118,7 +118,6 @@
            GOBACK.
       *    LCG Algorithm to generate a random number based on SEED
       *    Seed = (Seed * 1103515245 + 12345) MOD 2147483647
-      *    I didn't use FUNCTION MOD for compatibility between systems
        1000-NEXT-RAND.
               COMPUTE WS-SEED = (WS-SEED * 1103515245 + 12345)
               DIVIDE WS-SEED BY 2147483647
