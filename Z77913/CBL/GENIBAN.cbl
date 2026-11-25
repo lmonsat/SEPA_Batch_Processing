@@ -69,7 +69,7 @@
       *
        01 WS-COUNTRY-BBAN.
          05 WS-FR-BBAN-STR       PIC X(29).
-         05 WS-LU-BBAN-STR       PIC X(16).
+         05 WS-LU-BBAN-STR       PIC X(22).
          05 WS-DE-BBAN-STR       PIC X(24).
          05 WS-BE-BBAN-STR       PIC X(12).
       *
@@ -251,6 +251,74 @@
                   INTO WS-DE-FINAL-IBAN
            END-STRING.
            DISPLAY 'FINAL IBAN: ' WS-DE-FINAL-IBAN.
+
+       2000-IBAN-LU.
+           DISPLAY '--------------------------------------------------'
+      *    Reset WS value used in the previous paragraph
+           INITIALIZE WS-BANK.
+           INITIALIZE WS-COUNTRY-CODE.
+           INITIALIZE WS-CALCULATION.
+      *    INITIALIZE reset 0 to the PTR or it needs to be at 1
+           MOVE 1 TO WS-PTR IN WS-CALCULATION.
+           INITIALIZE WS-CONVERSION.
+           MOVE "LU" TO WS-CODE-ALPHA.
+           CALL 'RANDSUB' USING BY CONTENT "LU", "NEXT",
+      -                         BY REFERENCE WS-MAX, WS-RETURN.
+           MOVE WS-RETURN(5:3) TO WS-LU-BANK.
+           DISPLAY 'BANK CODE: ' WS-LU-BANK.
+      *    Calling 10 times RANDSUB for the 13 digits in the account nbr
+           MOVE 13 TO WS-COUNT.
+           PERFORM UNTIL WS-COUNT <= 0
+              CALL 'RANDSUB' USING BY CONTENT " ", "NEXT",
+      -                         BY REFERENCE WS-MAX-ACC-NBR, WS-RETURN
+              MOVE WS-RETURN(7:1) TO WS-LU-ACCOUNT (WS-COUNT:1)
+              DISPLAY 'ACCOUNT NUMBER: ' WS-LU-ACCOUNT
+           SUBTRACT 1 FROM WS-COUNT
+           END-PERFORM.
+      *    RESET of WS-REM
+           MOVE 0 TO WS-REM.
+      *    Country code conversion
+           MOVE 'L' TO WS-CHAR.
+           PERFORM CONVERSION.
+           MOVE WS-NUM-VAL TO WS-CONVERTED-CODE(1).
+           MOVE 'U' TO WS-CHAR.
+           PERFORM CONVERSION.
+           MOVE WS-NUM-VAL TO WS-CONVERTED-CODE(2).
+      *
+           DISPLAY 'CONVERTED CODE: ' WS-CODE-NUM.
+      *
+           STRING WS-LU-BANK      DELIMITED BY SIZE
+                  WS-LU-ACCOUNT   DELIMITED BY SIZE
+                  WS-CODE-NUM     DELIMITED BY SIZE
+                  INTO WS-LU-BBAN-STR
+                  WITH POINTER WS-PTR
+           END-STRING.
+      *
+           STRING '00' DELIMITED BY SIZE
+                 INTO WS-LU-BBAN-STR
+                 WITH POINTER WS-PTR
+           END-STRING.
+           DISPLAY 'BBAN STR: ' WS-LU-BBAN-STR.
+      *    IBAN KEY calculation
+           COMPUTE WS-LEN = FUNCTION LENGTH (WS-LU-BBAN-STR).
+           PERFORM VARYING WS-I FROM 1 BY 1 UNTIL WS-I > WS-LEN
+               MOVE WS-LU-BBAN-STR(WS-I:1) TO WS-DIGIT
+               COMPUTE WS-REM = WS-REM * 10 + WS-DIGIT
+               DIVIDE WS-REM BY 97
+                    GIVING WS-QUOTIENT
+                    REMAINDER WS-REM
+               DISPLAY 'REM: ' WS-REM
+           END-PERFORM.
+      *
+           COMPUTE WS-IBAN-KEY = 98 - WS-REM.
+           DISPLAY 'IBAN KEY: ' WS-IBAN-KEY.
+           STRING WS-CODE-ALPHA   DELIMITED BY SIZE
+                  WS-IBAN-KEY     DELIMITED BY SIZE
+                  WS-LU-BANK      DELIMITED BY SIZE
+                  WS-LU-ACCOUNT   DELIMITED BY SIZE
+                  INTO WS-LU-FINAL-IBAN
+           END-STRING.
+           DISPLAY 'FINAL IBAN: ' WS-LU-FINAL-IBAN.
 
            GOBACK.
        CONVERSION.
