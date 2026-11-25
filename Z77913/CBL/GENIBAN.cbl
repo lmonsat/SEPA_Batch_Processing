@@ -55,6 +55,7 @@
          05 WS-LU-ACCOUNT         PIC 9(13).
       *
          05 WS-BE-FINAL-IBAN      PIC X(16).
+         05 WS-BE-BASE-10         PIC 9(10).
          05 WS-BE-BANK            PIC 9(03).
          05 WS-BE-ACCOUNT         PIC 9(07).
          05 WS-BE-KEY             PIC 9(02).
@@ -71,7 +72,7 @@
          05 WS-FR-BBAN-STR       PIC X(29).
          05 WS-LU-BBAN-STR       PIC X(22).
          05 WS-DE-BBAN-STR       PIC X(24).
-         05 WS-BE-BBAN-STR       PIC X(12).
+         05 WS-BE-BBAN-STR       PIC X(18).
       *
        01 WS-CALCULATION.
          05 WS-LEN              PIC 9(02) COMP.
@@ -86,7 +87,7 @@
            05  WS-CHAR             PIC X(01).
            05  WS-NUM-VAL          PIC 9(02).
       *
-       01 WS-RETURN          PIC 9(08).
+       01 WS-RETURN          PIC 9(08) VALUE 0.
        01 WS-MAX             PIC 9(03) VALUE 3.
        01 WS-MAX-AGENCY      PIC 9(03) VALUE 99.
        01 WS-MAX-ACC-NBR     PIC 9(01) VALUE 9.
@@ -102,16 +103,31 @@
       *------------------
        PROCEDURE DIVISION.
       *------------------
-       0000-IBAN-FR.
+      *
+      *INFO: FOR EVERY BANK AGENCY/CODE GENERATION OF FIRST '0',
+      *      IMPOSSIBLE BY CONCEPTION.
+      *
+      *TODO: FACTORIZATION
+      *
+       000-MAIN.
+           PERFORM 1000-IBAN-FR.
+           PERFORM 2000-IBAN-DE.
+           PERFORM 3000-IBAN-LU.
+           PERFORM 4000-IBAN-BE.
+           GOBACK.
+      *
+       1000-IBAN-FR.
            MOVE "FR" TO WS-CODE-ALPHA.
            CALL 'RANDSUB' USING BY CONTENT "FR", "INIT",
-      -                         BY REFERENCE WS-MAX, WS-RETURN.
-           MOVE WS-RETURN(4:5) TO WS-BANK-CODE.
+      -                         BY REFERENCE WS-MAX, WS-RETURN
+           MOVE WS-RETURN(4:5) TO WS-BANK-CODE
            DISPLAY 'BANK CODE: ' WS-BANK-CODE.
       *
-           CALL 'RANDSUB' USING BY CONTENT " ", "NEXT",
-      -                         BY REFERENCE WS-MAX-AGENCY, WS-RETURN.
-           MOVE WS-RETURN(4:5) TO WS-AGENCY-CODE.
+           PERFORM UNTIL WS-AGENCY-CODE IS NOT EQUAL TO ZERO
+              CALL 'RANDSUB' USING BY CONTENT " ", "NEXT",
+      -                            BY REFERENCE WS-MAX-AGENCY, WS-RETURN
+              MOVE WS-RETURN(4:5) TO WS-AGENCY-CODE
+           END-PERFORM.
            DISPLAY 'BANK AGENCY: ' WS-AGENCY-CODE.
       *    Calling 11 times RANDSUB for the 11 digits in the account nbr
            MOVE 11 TO WS-COUNT.
@@ -184,7 +200,7 @@
            END-STRING.
            DISPLAY 'FINAL IBAN: ' WS-FINAL-IBAN.
       *
-       1000-IBAN-DE.
+       2000-IBAN-DE.
            DISPLAY '--------------------------------------------------'
       *    Reset WS value used in the previous paragraph
            INITIALIZE WS-BANK.
@@ -192,11 +208,12 @@
            INITIALIZE WS-CALCULATION.
       *    INITIALIZE reset 0 to the PTR or it needs to be at 1
            MOVE 1 TO WS-PTR IN WS-CALCULATION.
+           MOVE 0 TO WS-RETURN.
            INITIALIZE WS-CONVERSION.
            MOVE "DE" TO WS-CODE-ALPHA.
-           CALL 'RANDSUB' USING BY CONTENT "DE", "NEXT",
-      -                         BY REFERENCE WS-MAX, WS-RETURN.
-           MOVE WS-RETURN(1:8) TO WS-DE-BLZ.
+                 CALL 'RANDSUB' USING BY CONTENT "DE", "NEXT",
+      -                               BY REFERENCE WS-MAX, WS-RETURN
+                 MOVE WS-RETURN(1:8) TO WS-DE-BLZ
            DISPLAY 'BANK CODE: ' WS-DE-BLZ.
       *    Calling 10 times RANDSUB for the 10 digits in the account nbr
            MOVE 10 TO WS-COUNT.
@@ -252,7 +269,7 @@
            END-STRING.
            DISPLAY 'FINAL IBAN: ' WS-DE-FINAL-IBAN.
 
-       2000-IBAN-LU.
+       3000-IBAN-LU.
            DISPLAY '--------------------------------------------------'
       *    Reset WS value used in the previous paragraph
            INITIALIZE WS-BANK.
@@ -260,13 +277,14 @@
            INITIALIZE WS-CALCULATION.
       *    INITIALIZE reset 0 to the PTR or it needs to be at 1
            MOVE 1 TO WS-PTR IN WS-CALCULATION.
+           MOVE 0 TO WS-RETURN.
            INITIALIZE WS-CONVERSION.
            MOVE "LU" TO WS-CODE-ALPHA.
-           CALL 'RANDSUB' USING BY CONTENT "LU", "NEXT",
-      -                         BY REFERENCE WS-MAX, WS-RETURN.
-           MOVE WS-RETURN(5:3) TO WS-LU-BANK.
+                 CALL 'RANDSUB' USING BY CONTENT "LU", "NEXT",
+      -                               BY REFERENCE WS-MAX, WS-RETURN.
+                 MOVE WS-RETURN(6:3) TO WS-LU-BANK.
            DISPLAY 'BANK CODE: ' WS-LU-BANK.
-      *    Calling 10 times RANDSUB for the 13 digits in the account nbr
+      *    Calling 13 times RANDSUB for the 13 digits in the account nbr
            MOVE 13 TO WS-COUNT.
            PERFORM UNTIL WS-COUNT <= 0
               CALL 'RANDSUB' USING BY CONTENT " ", "NEXT",
@@ -319,8 +337,87 @@
                   INTO WS-LU-FINAL-IBAN
            END-STRING.
            DISPLAY 'FINAL IBAN: ' WS-LU-FINAL-IBAN.
-
-           GOBACK.
+       4000-IBAN-BE.
+           DISPLAY '--------------------------------------------------'
+      *    Reset WS value used in the previous paragraph
+           INITIALIZE WS-BANK.
+           INITIALIZE WS-COUNTRY-CODE.
+           INITIALIZE WS-CALCULATION.
+      *    INITIALIZE reset 0 to the PTR or it needs to be at 1
+           MOVE 1 TO WS-PTR IN WS-CALCULATION.
+           MOVE 0 TO WS-RETURN.
+           INITIALIZE WS-CONVERSION.
+           MOVE "BE" TO WS-CODE-ALPHA.
+              CALL 'RANDSUB' USING BY CONTENT "BE", "NEXT",
+      -                            BY REFERENCE WS-MAX, WS-RETURN.
+           MOVE WS-RETURN(6:3) TO WS-BE-BANK.
+           DISPLAY 'BANK CODE: ' WS-BE-BANK.
+      *    Calling 7 times RANDSUB for the 7 digits in the account nbr
+           MOVE 7 TO WS-COUNT.
+           PERFORM UNTIL WS-COUNT <= 0
+              CALL 'RANDSUB' USING BY CONTENT " ", "NEXT",
+      -                         BY REFERENCE WS-MAX-ACC-NBR, WS-RETURN
+              MOVE WS-RETURN(7:1) TO WS-BE-ACCOUNT (WS-COUNT:1)
+              DISPLAY 'ACCOUNT NUMBER: ' WS-BE-ACCOUNT
+           SUBTRACT 1 FROM WS-COUNT
+           END-PERFORM.
+      *    RESET of WS-REM
+           MOVE 0 TO WS-REM.
+      *    Country code conversion
+           MOVE 'B' TO WS-CHAR.
+           PERFORM CONVERSION.
+           MOVE WS-NUM-VAL TO WS-CONVERTED-CODE(1).
+           MOVE 'E' TO WS-CHAR.
+           PERFORM CONVERSION.
+           MOVE WS-NUM-VAL TO WS-CONVERTED-CODE(2).
+           DISPLAY 'CONVERTED CODE: ' WS-CODE-NUM.
+      *
+           STRING WS-BE-BANK DELIMITED BY SIZE
+                  WS-BE-ACCOUNT DELIMITED BY SIZE
+                  INTO WS-BE-BASE-10
+           END-STRING.
+      *
+           DIVIDE WS-BE-BASE-10 BY 97
+               GIVING WS-QUOTIENT
+               REMAINDER WS-BE-KEY
+           MOVE 0 TO WS-QUOTIENT.
+           IF WS-BE-KEY = ZERO
+               MOVE 97 TO WS-BE-KEY
+           END-IF.
+           DISPLAY 'BBAN KEY: ' WS-BE-KEY.
+      *
+           STRING WS-BE-BANK      DELIMITED BY SIZE
+                  WS-BE-ACCOUNT   DELIMITED BY SIZE
+                  WS-BE-KEY       DELIMITED BY SIZE
+                  WS-CODE-NUM     DELIMITED BY SIZE
+                  '00'            DELIMITED BY SIZE
+                  INTO WS-BE-BBAN-STR
+                  WITH POINTER WS-PTR
+           END-STRING.
+      *
+           DISPLAY 'BBAN STR: ' WS-BE-BBAN-STR.
+      *    IBAN KEY calculation
+           COMPUTE WS-LEN = FUNCTION LENGTH (WS-BE-BBAN-STR).
+           PERFORM VARYING WS-I FROM 1 BY 1 UNTIL WS-I > WS-LEN
+               MOVE WS-BE-BBAN-STR(WS-I:1) TO WS-DIGIT
+               COMPUTE WS-REM = WS-REM * 10 + WS-DIGIT
+               DIVIDE WS-REM BY 97
+                    GIVING WS-QUOTIENT
+                    REMAINDER WS-REM
+               DISPLAY 'REM: ' WS-REM
+           END-PERFORM.
+      *
+           COMPUTE WS-IBAN-KEY = 98 - WS-REM.
+           DISPLAY 'IBAN KEY: ' WS-IBAN-KEY.
+           STRING WS-CODE-ALPHA   DELIMITED BY SIZE
+                  WS-IBAN-KEY     DELIMITED BY SIZE
+                  WS-BE-BANK      DELIMITED BY SIZE
+                  WS-BE-ACCOUNT   DELIMITED BY SIZE
+                  WS-BE-KEY       DELIMITED BY SIZE
+                  INTO WS-BE-FINAL-IBAN
+           END-STRING.
+           DISPLAY 'FINAL IBAN: ' WS-BE-FINAL-IBAN.
+      *
        CONVERSION.
            EVALUATE WS-CHAR
                  WHEN 'A' THRU 'I'
