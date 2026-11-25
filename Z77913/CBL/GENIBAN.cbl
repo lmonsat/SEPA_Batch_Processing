@@ -8,14 +8,19 @@
       *--------------------
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-      *     SELECT IBAN-FILE ASSIGN TO IBANLIST.
+           SELECT IBAN-FILE ASSIGN TO IBANLIST
+                            ORGANIZATION IS SEQUENTIAL
+                            ACCESS MODE  IS SEQUENTIAL.
       *-------------
        DATA DIVISION.
       *-------------
        FILE SECTION.
-      * FD  IBAN-FILE RECORDING MODE F.
-      * 01  REC-IBAN.
-      *     05  IBAN       PIC X(34).
+       FD  IBAN-FILE RECORDING MODE F
+                     BLOCK CONTAINS 0 RECORDS
+                     RECORD CONTAINS 120 CHARACTERS.
+       01  REC-IBAN.
+         05 IBAN       PIC X(27).
+         05 FILLER     PIC X(93).
       *
        WORKING-STORAGE SECTION.
       *-------------------------------------------------------------
@@ -109,11 +114,26 @@
       *
       *TODO: FACTORIZATION
       *
-       000-MAIN.
+       0000-MAIN.
            PERFORM 1000-IBAN-FR.
+           OPEN OUTPUT IBAN-FILE.
+           MOVE WS-FINAL-IBAN TO IBAN IN REC-IBAN.
+           WRITE REC-IBAN.
+      *
            PERFORM 2000-IBAN-DE.
+           MOVE WS-DE-FINAL-IBAN TO IBAN IN REC-IBAN.
+           WRITE REC-IBAN.
+      *
            PERFORM 3000-IBAN-LU.
+           MOVE WS-LU-FINAL-IBAN TO IBAN IN REC-IBAN.
+           WRITE REC-IBAN.
+      *
            PERFORM 4000-IBAN-BE.
+
+           MOVE WS-BE-FINAL-IBAN TO IBAN IN REC-IBAN.
+           WRITE REC-IBAN.
+      *
+           CLOSE IBAN-FILE.
            GOBACK.
       *
        1000-IBAN-FR.
@@ -430,7 +450,7 @@
                      COMPUTE WS-NUM-VAL =
                          FUNCTION ORD(WS-CHAR) - FUNCTION ORD('S') + 28
            END-EVALUATE.
-      * WRITE-RECORD.
-      *     OPEN OUTPUT IBAN-FILE.
-      *     WRITE REC-IBAN.
-      *     CLOSE IBAN-FILE.
+       WRITE-RECORD.
+           OPEN OUTPUT IBAN-FILE.
+           WRITE REC-IBAN.
+           CLOSE IBAN-FILE.
