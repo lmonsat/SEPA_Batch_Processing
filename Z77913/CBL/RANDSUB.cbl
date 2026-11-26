@@ -72,10 +72,9 @@
        01 WS-RANDOM-VAL     PIC 9(18) COMP.
        01 WS-QUOTIENT       PIC 9(18) COMP.
        01 WS-VAL            PIC 9(02).
-       01 WS-ACCOUNT-NBR    PIC 9(01).
        LINKAGE SECTION.
       *
-       01 LK-FULL-COUNTRY-CODE       PIC A(02).
+       01 LK-FULL-COUNTRY-CODE  PIC A(02).
        01 LK-RAND               PIC A(04).
        01 LK-MAX                PIC 9(03).
        01 LK-RETURN             PIC 9(08).

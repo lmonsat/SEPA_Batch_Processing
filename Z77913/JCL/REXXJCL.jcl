@@ -13,7 +13,7 @@
 //* Adding the output file used to print IBAN /
 //IBANLIST     DD DSN=&SYSUID..ACCOUNT(IBANLIST),DISP=SHR
 //PRTLINE      DD SYSOUT=*,OUTLIM=1000
-//SYSOUT       DD SYSOUT=*,OUTLIM=1000
+//SYSOUT       DD DUMMY
 //CEEDUMP      DD DUMMY
 //SYSUDUMP     DD DUMMY
 //*

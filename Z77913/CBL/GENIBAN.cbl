@@ -86,7 +86,6 @@
          05 WS-REM              PIC 9(04) COMP VALUE ZERO.
          05 WS-QUOTIENT         PIC 9(15) COMP VALUE ZERO.
          05 WS-PTR              PIC 9(02) VALUE 1.
-      *   05 WS-RESTE             PIC 9(02).
       *
        01 WS-CONVERSION.
            05  WS-CHAR             PIC X(01).
@@ -96,43 +95,35 @@
        01 WS-MAX             PIC 9(03) VALUE 3.
        01 WS-MAX-AGENCY      PIC 9(03) VALUE 99.
        01 WS-MAX-ACC-NBR     PIC 9(01) VALUE 9.
-       01 WS-TEMP            PIC 9(01).
-      *
-
-      *
-       01 WS-ALPHA-EBCDIC   PIC X(62) VALUE "ABCDEFGHIJKLMNOPQRSTUVWXYZa
-      -    "bcdefghijklmnopqrstuvwxyz0123456789".
-       01 WS-ALPHA-ASCII    PIC X(62) VALUE "ABCDEFGHIJKLMNOPQRSTUVWXYZa
-      -    "bcdefghijklmnopqrstuvwxyz0123456789".
        01 WS-COUNT           PIC 9(02).
       *------------------
        PROCEDURE DIVISION.
       *------------------
       *
-      *INFO: FOR EVERY BANK AGENCY/CODE GENERATION OF FIRST '0',
+      *INFO: FOR EVERY AGENCY CODE GENERATION OF FIRST '0',
       *      IMPOSSIBLE BY CONCEPTION.
       *
       *TODO: FACTORIZATION
       *
        0000-MAIN.
-           PERFORM 1000-IBAN-FR.
            OPEN OUTPUT IBAN-FILE.
-           MOVE WS-FINAL-IBAN TO IBAN IN REC-IBAN.
-           WRITE REC-IBAN.
+           PERFORM 25 TIMES
+                 PERFORM 1000-IBAN-FR
+                 MOVE WS-FINAL-IBAN TO IBAN IN REC-IBAN
+                 WRITE REC-IBAN
       *
-           PERFORM 2000-IBAN-DE.
-           MOVE WS-DE-FINAL-IBAN TO IBAN IN REC-IBAN.
-           WRITE REC-IBAN.
+                 PERFORM 2000-IBAN-DE
+                 MOVE WS-DE-FINAL-IBAN TO IBAN IN REC-IBAN
+                 WRITE REC-IBAN
       *
-           PERFORM 3000-IBAN-LU.
-           MOVE WS-LU-FINAL-IBAN TO IBAN IN REC-IBAN.
-           WRITE REC-IBAN.
+                 PERFORM 3000-IBAN-LU
+                 MOVE WS-LU-FINAL-IBAN TO IBAN IN REC-IBAN
+                 WRITE REC-IBAN
       *
-           PERFORM 4000-IBAN-BE.
-
-           MOVE WS-BE-FINAL-IBAN TO IBAN IN REC-IBAN.
-           WRITE REC-IBAN.
-      *
+                 PERFORM 4000-IBAN-BE
+                 MOVE WS-BE-FINAL-IBAN TO IBAN IN REC-IBAN
+                 WRITE REC-IBAN
+           END-PERFORM.
            CLOSE IBAN-FILE.
            GOBACK.
       *
@@ -439,6 +430,12 @@
            DISPLAY 'FINAL IBAN: ' WS-BE-FINAL-IBAN.
       *
        CONVERSION.
+      *
+      *    EVALUATE act as a switch case.
+      *    ORD return a cardinal value of a char from EBCDIC TABLE,
+      *    for exemple 'A' is 193 however ORD return 194,
+      *    as it start at 1 instead of 0 like the default EBCDIC TABLE.
+      *
            EVALUATE WS-CHAR
                  WHEN 'A' THRU 'I'
                      COMPUTE WS-NUM-VAL =
@@ -450,7 +447,3 @@
                      COMPUTE WS-NUM-VAL =
                          FUNCTION ORD(WS-CHAR) - FUNCTION ORD('S') + 28
            END-EVALUATE.
-       WRITE-RECORD.
-           OPEN OUTPUT IBAN-FILE.
-           WRITE REC-IBAN.
-           CLOSE IBAN-FILE.
