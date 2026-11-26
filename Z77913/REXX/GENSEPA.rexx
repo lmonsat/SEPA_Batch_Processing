@@ -20,7 +20,7 @@ iban.count = 5
 
 /* Declaration */
 /* Reading the IBAN file and writting into a stem variable */
-"EXECIO * DISKR" LISTACC "(STEM iban. FINIS"
+"EXECIO * DISKR" LISTACCT "(STEM iban. FINIS"
 
 iban.count = iban.0
 
@@ -36,7 +36,7 @@ reason.count = 7
 tx_id = 0
 
 /* Generate a record */
-DO nbr_transactions = 1 TO 99
+DO nbr_transactions = 1 TO 100
 
     tx_id = tx_id + 1
 

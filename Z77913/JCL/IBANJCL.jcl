@@ -15,3 +15,13 @@
 //LKED.SYSLIB   DD
 //              DD DSN=CEE.SCEELKED,DISP=SHR
 //              DD DSN=&SYSUID..LOAD,DISP=SHR
+//STEP3  EXEC IGYWCL
+//*
+//* Path of COBOL PGM */
+//COBOL.SYSIN  DD DSN=&SYSUID..CBL(GENACCT),DISP=SHR
+//*
+//* Path of the binary execution file */
+//LKED.SYSLMOD DD DSN=&SYSUID..LOAD(GENACCT),DISP=SHR
+//LKED.SYSLIB   DD
+//              DD DSN=CEE.SCEELKED,DISP=SHR
+//              DD DSN=&SYSUID..LOAD,DISP=SHR

@@ -3,17 +3,27 @@
 //***********************************************/
 //* Ordre d'execution :
 //* 1. Premier programme COBOL generations d'IBAN
-//* 2. Premier programme REXX generation de transaction SEPA
-//* 3. Dernier programme REXX generation de compte client
+//* 2. Second programme COBOL generations de compte clients
+//* 3. Premier programme REXX generation de transaction SEPA
 //* 4. Dernier programme COBOL de calcul de solde
 //***********************************************/
-//* Execution of the COBOL program /
+//* Execution of the first COBOL program /
 //CBL     EXEC PGM=GENIBAN
 //STEPLIB      DD DSN=&SYSUID..LOAD,DISP=SHR
 //* Adding the output file used to print IBAN /
 //IBANLIST     DD DSN=&SYSUID..ACCOUNT(IBANLIST),DISP=SHR
 //PRTLINE      DD SYSOUT=*,OUTLIM=1000
 //SYSOUT       DD DUMMY
+//CEEDUMP      DD DUMMY
+//SYSUDUMP     DD DUMMY
+//* Execution of the second COBOL program /
+//CBL2    EXEC PGM=GENACCT
+//STEPLIB      DD DSN=&SYSUID..LOAD,DISP=SHR
+//* Adding the output file used to print IBAN /
+//IBANLIST     DD DSN=&SYSUID..ACCOUNT(IBANLIST),DISP=SHR
+//ACCTLIST     DD DSN=&SYSUID..ACCOUNT(ACCTLIST),DISP=SHR
+//PRTLINE      DD SYSOUT=*,OUTLIM=1000
+//SYSOUT       DD SYSOUT=*,OUTLIM=1000
 //CEEDUMP      DD DUMMY
 //SYSUDUMP     DD DUMMY
 //*
@@ -32,7 +42,7 @@
 //REXX1   EXEC PGM=IRXJCL,PARM='GENSEPA'
 //SYSEXEC      DD DSN=&SYSUID..REXX,DISP=SHR
 //SEPAIN       DD DSN=&SYSUID..SEPA(TRX),DISP=MOD
-//LISTACC      DD DSN=&SYSUID..ACCOUNT(IBANLIST),DISP=MOD
+//LISTACCT      DD DSN=&SYSUID..ACCOUNT(IBANLIST),DISP=MOD
 //SYSTSPRT     DD SYSOUT=*,OUTLIM=1000
 //SYSOUT       DD SYSOUT=*,OUTLIM=1000
 //SYSIN        DD DUMMY
@@ -43,5 +53,3 @@
 //* ELSE
 //* ENDIF
 //***************************************************/
-//* CREER Z77913.SEPA, DELETE ET RECREER SEULEMENT TRX
-//* CELA REGLERA PROBLEME DATASET HAVE NOT SPACE SPECIFIED
